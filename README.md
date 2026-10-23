@@ -442,6 +442,7 @@ The summary is in **[ROADMAP.md](ROADMAP.md)**; the full assessment by dimension
 ---
 
 ## Downloads
+To build Windows packages for this fork, run the ArtCraft Launcher release workflow with a pinned source revision.
 
 **New to PdfCraft?** Download it from the [PdfCraft page on getartcraft.com](https://getartcraft.com/apps/pdfcraft). That's the easiest way to install it.
 
