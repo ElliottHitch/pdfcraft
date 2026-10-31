@@ -2,6 +2,7 @@
 
 - Windows release packages built locally and published to this fork
 - Installer update link points to this fork's releases
+- Removed community and promotional links from the app and CLI
 
 <p align="center">
   <a href="https://getartcraft.com/">
