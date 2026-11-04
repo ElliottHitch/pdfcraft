@@ -63,6 +63,7 @@ impl Automation {
                 return Err(failed(format!("output already exists; refusing to replace it: {output}")));
             }
             let parent = target.parent().ok_or_else(|| failed(format!("output has no parent directory: {output}")))?;
+            let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
             if !parent.is_dir() {
                 return Err(failed(format!("output directory does not exist: {}", parent.display())));
             }
@@ -201,6 +202,7 @@ impl Automation {
 /// Publish a PDF atomically while refusing a target created by another process after preflight.
 fn publish_new(path: &Path, bytes: &[u8]) -> Result<()> {
     let parent = path.parent().ok_or_else(|| failed("output has no parent directory"))?;
+    let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
     let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(failed)?;
     temp.write_all(bytes).map_err(failed)?;
     temp.as_file().sync_all().map_err(failed)?;

@@ -98,3 +98,45 @@ fn script_image_output_is_confined_to_the_root() {
     }
     let _ = std::fs::remove_dir_all(&base);
 }
+
+#[test]
+fn bates_writes_a_bare_output_name_without_a_root() {
+    let base = sandbox("bates-working-dir");
+    let run = |args: &[&str]| Command::new(env!("CARGO_BIN_EXE_pdfcraft-cli")).current_dir(&base).args(args).output().unwrap();
+    let steps = serde_json::json!([
+        { "tool": "doc_create", "args": { "from": "blank", "width": 200, "height": 300 } },
+        { "tool": "doc_save", "args": { "doc": 1, "path": base.join("input.pdf") } },
+    ]);
+    std::fs::write(base.join("input.json"), steps.to_string()).unwrap();
+    let created = run(&["run", "--script", "input.json"]);
+    assert!(created.status.success(), "{}", String::from_utf8_lossy(&created.stderr));
+    let input = std::fs::read(base.join("input.pdf")).unwrap();
+    let files = format!("files={}", serde_json::json!([{ "input": "input.pdf", "output": "numbered.pdf" }]));
+
+    for dry_run in [true, false] {
+        let dry_run_arg = format!("dry_run={dry_run}");
+        let out = run(&["run", "doc_bates_multi", &files, "start_number=42", "prefix=CASE-", &dry_run_arg]);
+        assert!(out.status.success(), "{dry_run_arg}: {}", String::from_utf8_lossy(&out.stderr));
+        let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(report["dry_run"], dry_run);
+        assert_eq!(report["files"][0]["first"], 42);
+        assert_eq!(report["files"][0]["last"], 42);
+        if dry_run {
+            assert!(!base.join("numbered.pdf").exists());
+        } else {
+            assert_eq!(report["completed"], 1);
+            assert_eq!(report["failed"], 0);
+        }
+    }
+
+    let text = run(&["text", "numbered.pdf"]);
+    assert!(text.status.success(), "{}", String::from_utf8_lossy(&text.stderr));
+    assert!(String::from_utf8_lossy(&text.stdout).contains("CASE-000042"));
+    let numbered = std::fs::read(base.join("numbered.pdf")).unwrap();
+    let repeated = run(&["run", "doc_bates_multi", &files]);
+    assert!(!repeated.status.success());
+    assert!(String::from_utf8_lossy(&repeated.stderr).contains("output already exists"));
+    assert_eq!(std::fs::read(base.join("numbered.pdf")).unwrap(), numbered);
+    assert_eq!(std::fs::read(base.join("input.pdf")).unwrap(), input);
+    let _ = std::fs::remove_dir_all(&base);
+}
