@@ -40,7 +40,8 @@ function Assert-NoRow([string] $Sql, [string] $What) {
 
 # The shared compiled contract covers both scopes, duplicate guards and safe maintenance.
 # Keep it in a separate process because Windows Installer permits one session per process.
-& (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Path
+$shell = Join-Path $PSHOME $(if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh.exe' } else { 'powershell.exe' })
+& $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Path
 if ($LASTEXITCODE -ne 0) { throw 'Dual-scope installer contract failed.' }
 $Installer.UILevel = 2
 $manufacturer = Read-Row 'SELECT `Value` FROM `Property` WHERE `Property` = ''Manufacturer''' 1

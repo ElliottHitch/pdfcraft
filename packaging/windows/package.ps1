@@ -150,8 +150,9 @@ Invoke-Native 'wix build' {
 }
 # Inspect the built MSI, not just the XML, before signing/publishing it. In a child process, so
 # its Windows Installer database handle is gone before signtool opens the MSI.
+$shell = Join-Path $PSHOME $(if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh.exe' } else { 'powershell.exe' })
 Invoke-Native 'test-msi' {
-  & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $PSScriptRoot 'test-msi.ps1') $Msi `
+  & $shell -NoProfile -File (Join-Path $PSScriptRoot 'test-msi.ps1') $Msi `
     -CraftFontLicences $HasCraftFontLicences -ExpectedFontNoticesDirectory $Docs
 }
 # Check the compiled scope, path and registration contract before signing.
